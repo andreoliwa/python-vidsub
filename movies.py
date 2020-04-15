@@ -31,6 +31,8 @@ def missing():
         if not movie_path.is_dir():
             continue
 
+        missing_txt = movie_path / "missing.txt"
+
         found_movie = False
         for child_path in movie_path.glob("*"):
             tags = identify.tags_from_path(child_path)
@@ -44,25 +46,33 @@ def missing():
                 break
 
         if found_movie:
+            # Remove the file once a movie is found
+            if missing_txt.exists():
+                missing_txt.unlink()
             continue
 
         click.secho(f"\n{movie_path}", fg="red", err=True)
-
-        clean_movie_name = slugify(movie_path.name, separator="+")
-        click.secho(f"{TORRENT_SEARCH_COMMAND}{clean_movie_name}", fg="green")
-        click.echo(f"IMDB Search: {IMDB_SEARCH_URL}{clean_movie_name}")
-
-        results = ia.search_movie(clean_movie_name.replace("+", " "))
-        if not results:
+        if missing_txt.exists():
+            click.echo(missing_txt.read_text())
             continue
 
-        first_id = results[0].movieID
-        movie = ia.get_movie(first_id)
-        title = movie["title"]
-        year = movie["year"]
-        rating = movie.get("rating", "?")
+        clean_movie_name = slugify(movie_path.name, separator="+")
+        lines = []
+        lines.append(f"{TORRENT_SEARCH_COMMAND}{clean_movie_name}")
+        lines.append(f"IMDB Search: {IMDB_SEARCH_URL}{clean_movie_name}")
 
-        click.echo(f"{title} ({year})\nRating: {rating}\n{IMDB_URL}{first_id}")
+        results = ia.search_movie(clean_movie_name.replace("+", " "))
+        if results:
+            first_id = results[0].movieID
+            movie = ia.get_movie(first_id)
+            title = movie["title"]
+            year = movie["year"]
+            rating = movie.get("rating", "?")
+            lines.append(f"{title} ({year})\nRating: {rating}\n{IMDB_URL}{first_id}")
+
+        content = "\n".join(lines)
+        missing_txt.write_text(content)
+        click.echo(content)
 
 
 if __name__ == "__main__":
