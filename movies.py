@@ -6,6 +6,10 @@ from pathlib import Path
 from itertools import chain
 from slugify import slugify
 import imdb
+import re
+import sys
+from subprocess import run, PIPE
+from typing import Tuple, Union
 
 ROOT_PATH = Path("~/data").expanduser()
 HORROR_MOVIES_PATH = ROOT_PATH / "horror-movies"
@@ -22,15 +26,21 @@ def movies():
     pass
 
 
+def iter_movie_directories(patterns: Tuple[str] = None):
+    regex = re.compile(".*".join(patterns), re.IGNORECASE) if patterns else None
+    for movie_path in chain(MOVIES_PATH.iterdir(), HORROR_MOVIES_PATH.iterdir()):
+        if not movie_path.is_dir():
+            continue
+        if not regex or (regex and regex.findall(movie_path.name)):
+            yield movie_path
+
+
 @movies.command()
 def missing():
     """Missing movies (empty folders)."""
     ia = imdb.IMDb()
 
-    for movie_path in chain(MOVIES_PATH.glob("*"), HORROR_MOVIES_PATH.glob("*")):
-        if not movie_path.is_dir():
-            continue
-
+    for movie_path in iter_movie_directories():
         missing_txt = movie_path / "missing.txt"
 
         found_movie = False
@@ -51,7 +61,7 @@ def missing():
                 missing_txt.unlink()
             continue
 
-        click.secho(f"\n{movie_path}", fg="red", err=True)
+        click.secho(f"\n{movie_path}", fg="bright_red", err=True)
         if missing_txt.exists():
             click.echo(missing_txt.read_text())
             continue
@@ -73,6 +83,59 @@ def missing():
         content = "\n".join(lines)
         missing_txt.write_text(content)
         click.echo(content)
+
+
+def ls_movie(path: Union[Path, str]):
+    click.echo(f"\n{path}:")
+    run(f"ls -lh '{path}'", shell=True, universal_newlines=True)
+
+
+@movies.command()
+@click.argument("partial_name", nargs=-1, required=True)
+def ls(partial_name):
+    """List movies by a partial dir name."""
+    for movie_path in iter_movie_directories(partial_name):
+        ls_movie(movie_path)
+
+
+@movies.command()
+@click.argument("partial_name", nargs=-1, required=True)
+def rm(partial_name):
+    """Remove a movie directory by a partial dir name."""
+    movie_list = [str(movie_path) for movie_path in iter_movie_directories(partial_name)]
+    if not movie_list:
+        click.secho("No movie found", err=True, fg="bright_red")
+        sys.exit(1)
+
+    choices = "\n".join(movie_list)
+    chosen_dir = run(
+        f"echo '{choices}' | fzf --height={len(movie_list)} --cycle --tac",
+        shell=True,
+        stdout=PIPE,
+        universal_newlines=True,
+    ).stdout.strip()
+
+    if not chosen_dir:
+        click.secho("No directory selected", err=True, fg="bright_red")
+        sys.exit(2)
+
+    ls_movie(chosen_dir)
+    click.confirm("\nDo you really want to remove this directory?", abort=True)
+
+    run(f"rm -rf '{chosen_dir}'", shell=True)
+    click.secho(f"Directory removed: {chosen_dir}", fg="green")
+
+
+@movies.command()
+def check():
+    """Check files on the root dir and other problems."""
+    root_files = [str(path) for path in chain(MOVIES_PATH.iterdir(), HORROR_MOVIES_PATH.iterdir()) if not path.is_dir()]
+    if root_files:
+        click.secho("There are files in the root dir! Move them to subdirectories.", fg="bright_red", err=True)
+        click.echo("\n".join(root_files))
+        sys.exit(1)
+
+    click.secho("No problems found", fg="bright_green")
 
 
 if __name__ == "__main__":
