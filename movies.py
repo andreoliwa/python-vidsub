@@ -20,7 +20,6 @@ IMDB_SEARCH_URL = "https://www.imdb.com/find?q="
 TORRENT_SEARCH_COMMAND = "torrent-search -a -i on1337x "
 MISSING_TXT = "missing.txt"
 UNIQUE_SEPARATOR = "±"
-PARTIAL_NAME_ARGUMENT = click.argument("partial_name", nargs=-1, required=True)
 
 
 @click.group()
@@ -91,7 +90,7 @@ class MovieManager:
 @main.command()
 @click.option("--force", "-f", is_flag=True, default=False, help=f"Force creation of {MISSING_TXT}")
 @click.option("--verbose", "-v", is_flag=True, default=False, help=f"Verbose display")
-@PARTIAL_NAME_ARGUMENT
+@click.argument("partial_name", nargs=-1, required=False)
 def missing(force: bool, verbose: bool, partial_name: Tuple[str]):
     """Missing movies (empty folders)."""
     movie_manager = MovieManager(verbose)
@@ -182,7 +181,7 @@ def fail(message: str, exit_code: int = 1) -> None:
 
 
 @main.command()
-@PARTIAL_NAME_ARGUMENT
+@click.argument("partial_name", nargs=-1, required=True)
 def rm(partial_name: Tuple[str]):
     """Remove a movie directory by a partial dir name."""
     movie_list = [str(movie_path) for movie_path in iter_movie_directories(partial_name)]
