@@ -10,10 +10,15 @@ import re
 import sys
 from subprocess import run, PIPE
 from typing import Tuple, Union, List, Optional, Any
+from pprint import pprint
+from datetime import datetime, timedelta
+from babelfish import Language
+from subliminal import download_best_subtitles, region, save_subtitles, scan_videos
 
 ROOT_PATH = Path("~/data").expanduser()
 HORROR_MOVIES_PATH = ROOT_PATH / "horror-movies"
 MOVIES_PATH = ROOT_PATH / "movies"
+MOVIE_EXTENSIONS = {".avi", ".mp4"}
 IGNORE_SUFFIXES = {".sub"}
 IMDB_URL = "https://www.imdb.com/title/tt"
 IMDB_SEARCH_URL = "https://www.imdb.com/find?q="
@@ -91,8 +96,15 @@ class MovieManager:
 @click.option("--force", "-f", is_flag=True, default=False, help=f"Force creation of {MISSING_TXT}")
 @click.option("--verbose", "-v", is_flag=True, default=False, help=f"Verbose display")
 @click.argument("partial_name", nargs=-1, required=False)
-def missing(force: bool, verbose: bool, partial_name: Tuple[str]):
-    """Missing movies (empty folders)."""
+def check(force: bool, verbose: bool, partial_name: Tuple[str]):
+    """Check files on the root dir and missing movies (empty dirs)."""
+    root_files = [str(path) for path in chain(MOVIES_PATH.iterdir(), HORROR_MOVIES_PATH.iterdir()) if not path.is_dir()]
+    if root_files:
+        click.secho("There are files in the root dir! Move them to subdirectories.", fg="bright_red", err=True)
+        click.echo("\n".join(root_files))
+        sys.exit(1)
+    click.secho("No files in the root dirs", fg="bright_green")
+
     movie_manager = MovieManager(verbose)
 
     for movie_dir in iter_movie_directories(partial_name):
@@ -200,15 +212,27 @@ def rm(partial_name: Tuple[str]):
 
 
 @main.command()
-def check():
-    """Check files on the root dir and other problems."""
-    root_files = [str(path) for path in chain(MOVIES_PATH.iterdir(), HORROR_MOVIES_PATH.iterdir()) if not path.is_dir()]
-    if root_files:
-        click.secho("There are files in the root dir! Move them to subdirectories.", fg="bright_red", err=True)
-        click.echo("\n".join(root_files))
-        sys.exit(1)
+@click.argument("partial_name", nargs=-1, required=False)
+def sub(partial_name: Tuple[str]):
+    """Search subtitles for recent movies."""
+    recent_date = datetime.now() - timedelta(days=10)
 
-    click.secho("No problems found", fg="bright_green")
+    content = ["#!/usr/bin/env bash -x"]
+    for movie_dir in iter_movie_directories(partial_name):
+        recent_movies = {
+            item
+            for item in movie_dir.iterdir()
+            if "binary" in identify.tags_from_path(item)
+            and item.suffix in MOVIE_EXTENSIONS
+            and datetime.fromtimestamp(item.stat().st_mtime) > recent_date
+        }
+        if recent_movies:
+            content.append(f"subtitles.sh '{movie_dir}'")
+            click.echo(movie_dir)
+
+    script = Path("/tmp/download-all-subtitles.sh")
+    script.write_text("\n".join(content))
+    click.echo(f"Run this command to download subtitles:\nbash -x {script}")
 
 
 if __name__ == "__main__":
