@@ -18,8 +18,10 @@ from subliminal import download_best_subtitles, region, save_subtitles, scan_vid
 ROOT_PATH = Path("~/data").expanduser()
 HORROR_MOVIES_PATH = ROOT_PATH / "horror-movies"
 MOVIES_PATH = ROOT_PATH / "movies"
-MOVIE_EXTENSIONS = {".avi", ".mp4"}
-IGNORE_SUFFIXES = {".sub"}
+MOVIE_EXTENSIONS = {f".{item}" for item in {"avi", "mp4", "mpg", "mkv", "wmv"}}
+IGNORE_EXTENSIONS = {
+    f".{item}" for item in {"sub", "jpg", "jpeg", "nfo", "png", "part", "srt", "dts", "ac3", "swf", "pdf", "rar"}
+}
 IMDB_URL = "https://www.imdb.com/title/tt"
 IMDB_SEARCH_URL = "https://www.imdb.com/find?q="
 TORRENT_SEARCH_COMMAND = "torrent-search -a -i on1337x "
@@ -91,6 +93,33 @@ class MovieManager:
                     return movie
         return None
 
+    def iter_movies_in_dir(self, movie_dir: Path, verbose=False, use_magic=False) -> List[Path]:
+        found_movies: List[Path] = []
+        for file in movie_dir.iterdir():
+            tags = identify.tags_from_path(file)
+            if "binary" not in tags:
+                continue
+
+            if use_magic:
+                mime_type = magic.from_file(str(file), mime=True)
+                if mime_type.startswith("video") and file.suffix.lower() not in IGNORE_EXTENSIONS:
+                    if verbose:
+                        click.echo(f"  Found movie with magic: {file.name} ({mime_type})")
+                    found_movies.append(file)
+                    continue
+            elif file.suffix.lower() not in IGNORE_EXTENSIONS:
+                found_movies.append(file)
+                if verbose:
+                    click.echo(f"  Found binary movie: {file.name}")
+
+        missing_extensions = {
+            movie.suffix.lower() for movie in found_movies if movie.suffix.lower() not in MOVIE_EXTENSIONS
+        }
+        if missing_extensions:
+            click.secho(f"Add these extensions to MOVIE_EXTENSIONS: {missing_extensions}", fg="bright_red")
+
+        return found_movies
+
 
 @main.command()
 @click.option("--force", "-f", is_flag=True, default=False, help=f"Force creation of {MISSING_TXT}")
@@ -112,39 +141,45 @@ def check(force: bool, verbose: bool, partial_name: Tuple[str]):
             click.echo(f"\nMovie directory: {movie_dir}")
         missing_txt = movie_dir / MISSING_TXT
 
-        found_movie = None
-        for child_path in movie_dir.iterdir():
-            tags = identify.tags_from_path(child_path)
-            if "binary" not in tags:
-                continue
+        # TODO remove .xml files
 
-            mime_type = magic.from_file(str(child_path), mime=True)
-            # TODO use identify by default (it should be faster); add --magic option to use optionally
-            if mime_type.startswith("video") and child_path.suffix not in IGNORE_SUFFIXES:
-                if verbose:
-                    click.echo(f"Found movie {child_path.name} ({mime_type})")
-                found_movie = child_path
-                # TODO a dir can have multiple movies; use fzf to select the main one
-                break
-
-        if found_movie:
-            # Remove the file once a movie is found
+        found_movies = movie_manager.iter_movies_in_dir(movie_dir, verbose)
+        if found_movies:
+            # Remove it once a movie is found
             if missing_txt.exists():
                 missing_txt.unlink()
 
-            nfo_file = found_movie.with_suffix(".nfo")
-            # TODO remove .xml files
+            main_movie: Path = None
+            for found_movie in found_movies:
+                if found_movie.with_suffix(".nfo").exists():
+                    main_movie = found_movie
+                    break
+
+            if len(found_movies) == 1:
+                main_movie = found_movies[0]
+            elif not main_movie:
+                # If a .nfo file doesn't exist, select the main movie
+                # A dir can have multiple movies; use fzf to select the main one
+                chosen_movie = fzf(found_movies)
+                if not chosen_movie:
+                    click.secho("No main movie selected", fg="red")
+                    continue
+                main_movie = Path(chosen_movie)
+            if verbose:
+                click.echo(f"  Main movie: {main_movie.name}")
+
             # TODO remove all other .nfo files, keep only this one
+            nfo_file = main_movie.with_suffix(".nfo")
             if nfo_file.exists():
                 stat = nfo_file.stat()
-                click.echo(f"NFO file found: {nfo_file.name} (size in bytes: {stat.st_size})")
+                click.echo(f"  NFO file..: {nfo_file.name} (size in bytes: {stat.st_size})")
             else:
                 imdb_movie = movie_manager.search_imdb(movie_dir)
                 if imdb_movie:
                     url = movie_manager.format_imdb_url(imdb_movie)
                     nfo_file.write_text(f"{url}\n")
                     if verbose:
-                        click.echo(f"Writing {url} on {nfo_file}")
+                        click.echo(f"  Writing {url} on {nfo_file.name}")
             continue
 
         click.secho(f"\n{movie_dir}", fg="bright_red", err=True)
@@ -179,11 +214,14 @@ def ls(partial_name):
         ls_movie(movie_path)
 
 
-def fzf(items: List[Any]) -> str:
+def fzf(items: List[Any], reverse=False) -> str:
     choices = "\n".join([str(item) for item in items]).replace("'", "")
-    #  --tac
+    tac = " --tac" if reverse else ""
     return run(
-        f"echo '{choices}' | fzf --height={len(items) + 2} --cycle", shell=True, stdout=PIPE, universal_newlines=True,
+        f"echo '{choices}' | fzf --height={len(items) + 2}{tac} --cycle",
+        shell=True,
+        stdout=PIPE,
+        universal_newlines=True,
     ).stdout.strip()
 
 
@@ -223,7 +261,7 @@ def sub(partial_name: Tuple[str]):
             item
             for item in movie_dir.iterdir()
             if "binary" in identify.tags_from_path(item)
-            and item.suffix in MOVIE_EXTENSIONS
+            and item.suffix.lower() in MOVIE_EXTENSIONS
             and datetime.fromtimestamp(item.stat().st_mtime) > recent_date
         }
         if recent_movies:
