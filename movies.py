@@ -15,10 +15,11 @@ from datetime import datetime, timedelta
 from babelfish import Language
 from subliminal import download_best_subtitles, region, save_subtitles, scan_videos
 
-ROOT_PATH = Path("~/data").expanduser()
-HORROR_MOVIES_PATH = ROOT_PATH / "horror-movies"
-MOVIES_PATH = ROOT_PATH / "movies"
-MOVIE_EXTENSIONS = {f".{item}" for item in {"avi", "mp4", "mpg", "mkv", "wmv"}}
+ROOT_DIR = Path("~/data").expanduser()
+COMPLETED_DIR = ROOT_DIR / "completed"
+MOVIES_DIR = ROOT_DIR / "movies"
+WEIRD_MOVIES_DIR = ROOT_DIR / "horror-movies"
+MOVIE_EXTENSIONS = {f".{item}" for item in {"avi", "mp4", "mpg", "mkv", "wmv", "mov"}}
 IGNORE_EXTENSIONS = {
     f".{item}" for item in {"sub", "jpg", "jpeg", "nfo", "png", "part", "srt", "dts", "ac3", "swf", "pdf", "rar"}
 }
@@ -37,7 +38,7 @@ def main():
 
 def iter_movie_directories(patterns: Tuple[str] = None):
     regex = re.compile(".*".join(patterns), re.IGNORECASE) if patterns else None
-    for movie_path in chain(MOVIES_PATH.iterdir(), HORROR_MOVIES_PATH.iterdir()):
+    for movie_path in chain(MOVIES_DIR.iterdir(), WEIRD_MOVIES_DIR.iterdir()):
         if not movie_path.is_dir():
             continue
         if not regex or (regex and regex.findall(movie_path.name)):
@@ -65,7 +66,33 @@ class MovieManager:
         rating = movie.get("rating", "Not rated")
         return f"{title} ({year})\nRating: {rating}\n{url}"
 
-    def search_imdb(self, movie_dir: Path) -> Optional[imdb.Movie.Movie]:
+    @classmethod
+    def validate_root(cls) -> bool:
+        root_files = [
+            str(path) for path in chain(MOVIES_DIR.iterdir(), WEIRD_MOVIES_DIR.iterdir()) if not path.is_dir()
+        ]
+        if root_files:
+            click.secho("There are files in the root dir! Move them to subdirectories.", fg="bright_red", err=True)
+            click.echo("\n".join(root_files))
+            return False
+        click.secho(f"No single files under {MOVIES_DIR} and {WEIRD_MOVIES_DIR}", fg="bright_green")
+        return True
+
+    @classmethod
+    def validate_completed(cls) -> bool:
+        wrong: List[Path] = [path for path in COMPLETED_DIR.iterdir()]
+        if not wrong:
+            click.secho(f"No item under {COMPLETED_DIR}", fg="bright_green")
+            return True
+
+        click.secho(
+            f"Files/directories found under {COMPLETED_DIR}. Move them to the correct directory.", fg="bright_red"
+        )
+        for item in wrong:
+            click.echo(item.name)
+        return False
+
+    def search_imdb(self, movie_dir: Path, verbose=False) -> Optional[imdb.Movie.Movie]:
         slugged: str = slugify(movie_dir.name, separator=UNIQUE_SEPARATOR)
         parts = slugged.split(UNIQUE_SEPARATOR)
         movies: Optional[imdb.Movie.Movie] = None
@@ -78,6 +105,10 @@ class MovieManager:
                 continue
 
             choices = [self.format_info(movie) for movie in movies]
+            if not verbose:
+                # Display the movie dir before showing fzf when not in verbose mode
+                click.echo(f"\nSelect IMDb title for the directory: '{movie_dir}'")
+
             chosen_line = fzf(choices)
             if chosen_line:
                 break
@@ -125,25 +156,20 @@ class MovieManager:
 @click.option("--force", "-f", is_flag=True, default=False, help=f"Force creation of {MISSING_TXT}")
 @click.option("--verbose", "-v", is_flag=True, default=False, help=f"Verbose display")
 @click.argument("partial_name", nargs=-1, required=False)
-def check(force: bool, verbose: bool, partial_name: Tuple[str]):
-    """Check files on the root dir and missing movies (empty dirs)."""
-    root_files = [str(path) for path in chain(MOVIES_PATH.iterdir(), HORROR_MOVIES_PATH.iterdir()) if not path.is_dir()]
-    if root_files:
-        click.secho("There are files in the root dir! Move them to subdirectories.", fg="bright_red", err=True)
-        click.echo("\n".join(root_files))
+def validate(force: bool, verbose: bool, partial_name: Tuple[str]):
+    """Validate files on the root and completed dirs, and missing movies (empty dirs)."""
+    manager = MovieManager(verbose)
+    if not (manager.validate_root() and manager.validate_completed()):
         sys.exit(1)
-    click.secho("No files in the root dirs", fg="bright_green")
-
-    movie_manager = MovieManager(verbose)
 
     for movie_dir in iter_movie_directories(partial_name):
         if verbose:
-            click.echo(f"\nMovie directory: {movie_dir}")
+            click.echo(f"\nMovie directory: '{movie_dir}'")
         missing_txt = movie_dir / MISSING_TXT
 
         # TODO remove .xml files
 
-        found_movies = movie_manager.iter_movies_in_dir(movie_dir, verbose)
+        found_movies = manager.iter_movies_in_dir(movie_dir, verbose)
         if found_movies:
             # Remove it once a movie is found
             if missing_txt.exists():
@@ -172,11 +198,12 @@ def check(force: bool, verbose: bool, partial_name: Tuple[str]):
             nfo_file = main_movie.with_suffix(".nfo")
             if nfo_file.exists():
                 stat = nfo_file.stat()
-                click.echo(f"  NFO file..: {nfo_file.name} (size in bytes: {stat.st_size})")
+                if verbose:
+                    click.echo(f"  NFO file..: {nfo_file.name} (size in bytes: {stat.st_size})")
             else:
-                imdb_movie = movie_manager.search_imdb(movie_dir)
+                imdb_movie = manager.search_imdb(movie_dir, verbose)
                 if imdb_movie:
-                    url = movie_manager.format_imdb_url(imdb_movie)
+                    url = manager.format_imdb_url(imdb_movie)
                     nfo_file.write_text(f"{url}\n")
                     if verbose:
                         click.echo(f"  Writing {url} on {nfo_file.name}")
@@ -192,9 +219,9 @@ def check(force: bool, verbose: bool, partial_name: Tuple[str]):
         lines.append(f"{TORRENT_SEARCH_COMMAND}{clean_movie_name}")
         lines.append(f"IMDB Search: {IMDB_SEARCH_URL}{clean_movie_name}")
 
-        imdb_movie = movie_manager.search_imdb(movie_dir)
+        imdb_movie = manager.search_imdb(movie_dir, verbose)
         if imdb_movie:
-            lines.append(movie_manager.format_info(imdb_movie, full=True))
+            lines.append(manager.format_info(imdb_movie, full=True))
 
         content = "\n".join(lines)
         missing_txt.write_text(content)
@@ -202,7 +229,7 @@ def check(force: bool, verbose: bool, partial_name: Tuple[str]):
 
 
 def ls_movie(path: Union[Path, str]):
-    click.echo(f"\n{path}:")
+    click.echo(f"\n$ ls -lh '{path}'")
     run(f"ls -lh '{path}'", shell=True, universal_newlines=True)
 
 
@@ -255,7 +282,7 @@ def sub(partial_name: Tuple[str]):
     """Search subtitles for recent movies."""
     recent_date = datetime.now() - timedelta(days=10)
 
-    content = ["#!/usr/bin/env bash -x"]
+    lines = []
     for movie_dir in iter_movie_directories(partial_name):
         recent_movies = {
             item
@@ -265,11 +292,15 @@ def sub(partial_name: Tuple[str]):
             and datetime.fromtimestamp(item.stat().st_mtime) > recent_date
         }
         if recent_movies:
-            content.append(f"subtitles.sh '{movie_dir}'")
+            lines.append(f"subtitles.sh '{movie_dir}'")
             click.echo(movie_dir)
 
+    if not lines:
+        fail("No movies found")
+
+    lines.insert(0, "#!/usr/bin/env bash -x")
     script = Path("/tmp/download-all-subtitles.sh")
-    script.write_text("\n".join(content))
+    script.write_text("\n".join(lines))
     click.echo(f"Run this command to download subtitles:\nbash -x {script}")
 
 
