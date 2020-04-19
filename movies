@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+cd ~/dotfiles_private
+poetry run movies $*
