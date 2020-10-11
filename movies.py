@@ -75,7 +75,7 @@ class MovieManager:
 
     def format_info(self, movie: imdb.Movie.Movie, full=False) -> str:
         """Format movie info in one line or multiple lines."""
-        title = movie["title"]
+        title = movie["title"].replace("&", "").replace("(", "").replace(")", "").replace("'", "").replace('"', "")
         year = movie.get("year")
         url = self.format_imdb_url(movie)
         if not full:
@@ -226,7 +226,7 @@ class MovieManager:
 
 
 @main.command()
-@click.option("--force", "-f", is_flag=True, default=False, help=f"Force creation of {MISSING_TXT}")
+@click.option("--force", "-f", is_flag=True, default=False, help=f"Force creation of {MISSING_TXT} and .nfo files")
 @verbose_option
 @click.argument("movie_name", nargs=-1, required=False)
 def validate(force: bool, verbose: bool, movie_name: Tuple[str]):
@@ -234,6 +234,9 @@ def validate(force: bool, verbose: bool, movie_name: Tuple[str]):
 
     Check root and completed dirs, and missing movies (empty dirs).
     """
+    if force:
+        click.echo(f"Force creation of {MISSING_TXT} and .nfo files")
+
     manager = MovieManager(verbose)
     if not (manager.validate_root() and manager.validate_completed()):
         sys.exit(1)
@@ -283,7 +286,7 @@ def validate(force: bool, verbose: bool, movie_name: Tuple[str]):
                 # TODO remove all other .nfo files, keep only this one
                 # https://kodi.wiki/view/NFO_files
                 nfo_file = main_movie.with_suffix(".nfo")
-                if nfo_file.exists():
+                if nfo_file.exists() and not force:
                     stat = nfo_file.stat()
                     if verbose:
                         click.echo(f"  NFO file..: {nfo_file.name} (size in bytes: {stat.st_size})")
