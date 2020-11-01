@@ -17,3 +17,21 @@ include README.rst
 include tox.ini .travis.yml .appveyor.yml .readthedocs.yml .pre-commit-config.yaml
 
 global-exclude *.py[cod] __pycache__/* *.so *.dylib
+
+# added by check-manifest
+include *.in
+include *.lock
+include *.rst
+include *.yaml
+include *.yml
+include .bumpversion.cfg
+include .coveragerc
+include tox.ini
+recursive-include ci *.cmd
+recursive-include ci *.py
+recursive-include ci *.txt
+recursive-include ci *.yml
+recursive-include docs *.py
+recursive-include docs *.rst
+recursive-include docs *.txt
+recursive-include tests *.py
