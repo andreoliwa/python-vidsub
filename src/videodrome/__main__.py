@@ -1,5 +1,5 @@
 """
-Entrypoint module, in case you use `python -mvideo_tools`.
+Entrypoint module, in case you use `python -mvideodrome`.
 
 
 Why does this file exist, and why __main__? For more info, read:
@@ -8,7 +8,7 @@ Why does this file exist, and why __main__? For more info, read:
 - https://docs.python.org/2/using/cmdline.html#cmdoption-m
 - https://docs.python.org/3/using/cmdline.html#cmdoption-m
 """
-from video_tools.cli import main
+from videodrome.cli import main
 
 if __name__ == "__main__":
     main()

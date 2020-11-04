@@ -1,13 +1,13 @@
 [tool.poetry]
-name = "video-tools"
+name = "videodrome"
 version = "0.1.0"
 description = "Tools to sync subtitles and fix video file names"
 authors = ["Augusto W. Andreoli <andreoliwa@gmail.com>"]
 license = "MIT"
 readme = "README.rst"
-homepage = "https://github.com/andreoliwa/python-video-tools"
-repository = "https://github.com/andreoliwa/python-video-tools"
-documentation = "https://python-video-tools.readthedocs.io/"
+homepage = "https://github.com/andreoliwa/python-videodrome"
+repository = "https://github.com/andreoliwa/python-videodrome"
+documentation = "https://python-videodrome.readthedocs.io/"
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Environment :: Console",
@@ -22,8 +22,8 @@ classifiers = [
 ]
 
 [tool.poetry.urls]
-"Changelog" = "https://python-video-tools.readthedocs.io/en/latest/changelog.html"
-"Issue Tracker" = "https://github.com/andreoliwa/python-video-tools/issues"
+"Changelog" = "https://python-videodrome.readthedocs.io/en/latest/changelog.html"
+"Issue Tracker" = "https://github.com/andreoliwa/python-videodrome/issues"
 
 [tool.poetry.dependencies]
 python = "^3.7"
@@ -36,4 +36,4 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-vid = "video_tools.cli:main"
+vd = "videodrome.cli:main"
