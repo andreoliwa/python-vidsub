@@ -20,7 +20,8 @@ from vidsub import FileManager
 
 
 @click.command()
+@click.option("--dir", "-d", "dir_", type=click.Path(exists=True), help="Working directory")
 @click.argument("partial_names", nargs=-1)
-def main(partial_names):
-    for video in FileManager().videos():
+def main(dir_, partial_names):
+    for video in FileManager(dir_ or "").videos():
         click.echo(video)
