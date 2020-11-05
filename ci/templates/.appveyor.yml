@@ -3,7 +3,7 @@ build: off
 environment:
   global:
     COVERALLS_EXTRAS: '-v'
-    COVERALLS_REPO_TOKEN: [Required for Appveyor, take it from https://coveralls.io/github/andreoliwa/python-videodrome]
+    COVERALLS_REPO_TOKEN: [Required for Appveyor, take it from https://coveralls.io/github/andreoliwa/python-vidsub]
   matrix:
     - TOXENV: check
       TOXPYTHON: C:\Python36\python.exe

@@ -4,4 +4,4 @@ Reference
 .. toctree::
     :glob:
 
-    videodrome*
+    vidsub*

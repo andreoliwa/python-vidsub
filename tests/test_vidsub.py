@@ -1,6 +1,6 @@
 from click.testing import CliRunner
 
-from videodrome.cli import main
+from vidsub.cli import main
 
 
 def test_main():
