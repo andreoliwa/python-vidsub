@@ -3,7 +3,8 @@ __version__ = "0.0.0"
 
 import os
 from pathlib import Path
-from typing import List, Union
+from typing import List
+from typing import Union
 
 from clib.files import shell
 
