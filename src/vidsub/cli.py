@@ -16,8 +16,11 @@ Why does this file exist, and why not put this in __main__?
 """
 import click
 
+from vidsub import FileManager
+
 
 @click.command()
-@click.argument("names", nargs=-1)
-def main(names):
-    click.echo(repr(names))
+@click.argument("partial_names", nargs=-1)
+def main(partial_names):
+    for video in FileManager().videos():
+        click.echo(video)
