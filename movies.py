@@ -376,7 +376,7 @@ def subtitles(for_torrents_only: bool, days: int, movie_name: Tuple[str]):
         if recent_movies:
             found = True
             click.echo()
-            shell(f"subtitles.sh '{movie_dir}'")
+            shell(f"~/container-apps-private/bin/subtitles.sh '{movie_dir}'")
 
     if not found:
         failure("No movies found", 1)
