@@ -19,7 +19,7 @@ from slugify import slugify
 ROOT_DIR = Path("~/data").expanduser()
 COMPLETED_DIR = ROOT_DIR / "completed"
 MOVIES_DIR = ROOT_DIR / "movies"
-WEIRD_MOVIES_DIR = ROOT_DIR / "weird-movies"
+ODD_MOVIES_DIR = ROOT_DIR / "odd-movies"
 MOVIE_EXTENSIONS = {f".{item}" for item in {"avi", "mp4", "mpg", "mkv", "wmv", "mov"}}
 IGNORE_EXTENSIONS = {
     f".{item}"
@@ -90,14 +90,12 @@ class MovieManager:
     @staticmethod
     def validate_root() -> bool:
         """Validate if both root dirs doen't have single files."""
-        root_files = [
-            str(path) for path in chain(MOVIES_DIR.iterdir(), WEIRD_MOVIES_DIR.iterdir()) if not path.is_dir()
-        ]
+        root_files = [str(path) for path in chain(MOVIES_DIR.iterdir(), ODD_MOVIES_DIR.iterdir()) if not path.is_dir()]
         if root_files:
             failure("There are files in the root dir! Move them to subdirectories.")
             failure("  " + "\n  ".join(root_files))
             return False
-        success(f"No single files under {MOVIES_DIR} and {WEIRD_MOVIES_DIR}")
+        success(f"No single files under {MOVIES_DIR} and {ODD_MOVIES_DIR}")
         return True
 
     @staticmethod
@@ -161,7 +159,7 @@ class MovieManager:
     def iter_movie_dirs(cls, patterns: Tuple[str] = None):
         """Iterate over movie directories."""
         regex = re.compile(".*".join(patterns), re.IGNORECASE) if patterns else None
-        for movie_path in cls.iterdir_newest_first(MOVIES_DIR, WEIRD_MOVIES_DIR):
+        for movie_path in cls.iterdir_newest_first(MOVIES_DIR, ODD_MOVIES_DIR):
             if not movie_path.is_dir():
                 continue
             if not regex or (regex and regex.findall(movie_path.name)):
@@ -170,7 +168,7 @@ class MovieManager:
     @staticmethod
     def count_movies() -> int:
         """Return the count of movies in both dirs."""
-        return int(shell(f"ls -1 {MOVIES_DIR} {WEIRD_MOVIES_DIR} | wc -l | xargs", quiet=True, return_lines=True)[0])
+        return int(shell(f"ls -1 {MOVIES_DIR} {ODD_MOVIES_DIR} | wc -l | xargs", quiet=True, return_lines=True)[0])
 
     @staticmethod
     def iter_movies_in_dir(movie_dir: Path, verbose=False, use_magic=False) -> List[Path]:
