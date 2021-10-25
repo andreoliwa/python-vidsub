@@ -57,7 +57,7 @@ UNIQUE_SEPARATOR = "±"
 def main():
     """Tools for movie files and directories on Kodi."""
     if not MOVIES_DIR.exists():
-        command = "sshfs osmc@styx:/data/ ~/data"
+        command = "sshfs osmc@styx:/mnt/red/ ~/data"
         click.secho(f"SSH dir not mounted. Run this command:\n{command}", fg="bright_red")
         sys.exit(1)
 
