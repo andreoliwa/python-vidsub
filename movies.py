@@ -249,11 +249,11 @@ def validate(force: bool, verbose: bool, movie_name: Tuple[str]):
             if verbose:
                 click.echo(f"\nMovie directory: '{movie_dir}'")
 
-            missing_txt = movie_dir / MISSING_TXT  # TODO save file as json or toml
+            missing_txt = movie_dir / MISSING_TXT  # TODO feat: save file as json or toml
 
-            # TODO remove .xml files and confirm each file
-            # TODO add .nomedia to subdirs https://kodi.wiki/view/Update_Music_Library#Exclude_Folder
-            # TODO check VIDEO_TS for movies
+            # TODO feat: remove .xml files and confirm each file
+            # TODO feat: add .nomedia to subdirs https://kodi.wiki/view/Update_Music_Library#Exclude_Folder
+            # TODO feat: check VIDEO_TS for movies
 
             found_movies = manager.iter_movies_in_dir(movie_dir, verbose)
             if found_movies:
@@ -281,7 +281,7 @@ def validate(force: bool, verbose: bool, movie_name: Tuple[str]):
                 if verbose:
                     click.echo(f"  Main movie: {main_movie.name}")
 
-                # TODO remove all other .nfo files, keep only this one
+                # TODO feat: remove all other .nfo files, keep only this one
                 # https://kodi.wiki/view/NFO_files
                 nfo_file = main_movie.with_suffix(".nfo")
                 if nfo_file.exists() and not force:
