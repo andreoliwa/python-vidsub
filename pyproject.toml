@@ -2,7 +2,7 @@
 name = "vidsub"
 version = "0.1.0"
 description = "Tools to sync subtitles and fix video file names"
-authors = ["Augusto W. Andreoli <andreoliwa@gmail.com>"]
+authors = ["W. Augusto Andreoli <andreoliwa@gmail.com>"]
 license = "MIT"
 readme = "README.rst"
 homepage = "https://github.com/andreoliwa/python-vidsub"
@@ -16,7 +16,7 @@ classifiers = [
     "Operating System :: POSIX",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
     "Topic :: Utilities",
     "Topic :: Multimedia :: Video"
 ]
@@ -26,10 +26,15 @@ classifiers = [
 "Issue Tracker" = "https://github.com/andreoliwa/python-vidsub/issues"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.9"
 click = "^8.0.0"
 clib = { git = "https://github.com/andreoliwa/python-clib.git", branch = "develop" }
 # clib = {path = "../python-clib"}
+python-magic = "*"
+identify = "*"
+python-slugify = "*"
+imdbpy = "*"
+transmissionrpc = "*"
 
 [tool.poetry.dev-dependencies]
 
@@ -39,3 +44,11 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 vd = "vidsub.cli:main"
+
+[tool.isort]
+profile = "black"
+line_length = 120
+known_first_party = "vidsub"
+default_section = "THIRDPARTY"
+forced_separate = "test_vidsub"
+skip = ".tox,.eggs,ci/templates,build,dist"
