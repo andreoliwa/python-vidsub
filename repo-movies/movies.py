@@ -1,18 +1,26 @@
 """Tools for movie files and directories on Kodi."""
 import re
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timedelta
 from itertools import chain
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import click
 import imdb
 import magic
 from clib import verbose_option
-from clib.files import fzf, relative_to_home, shell
+from clib.files import fzf
+from clib.files import relative_to_home
+from clib.files import shell
 from clib.iter import roundrobin
-from clib.ui import AliasedGroup, failure, success
+from clib.ui import AliasedGroup
+from clib.ui import failure
+from clib.ui import success
 from identify import identify
 from slugify import slugify
 
@@ -272,7 +280,7 @@ def validate(force: bool, verbose: bool, movie_name: Tuple[str]):
                 elif not main_movie:
                     # If a .nfo file doesn't exist, select the main movie
                     # A dir can have multiple movies; use fzf to select the main one
-                    click.echo(f"\nSelect the main movie:")
+                    click.echo("\nSelect the main movie:")
                     chosen_movie = fzf(found_movies)
                     if not chosen_movie:
                         click.secho("No main movie selected", fg="red")
@@ -351,9 +359,9 @@ def rm(movie_name: Tuple[str]):
 
 @main.command()
 @click.option(
-    "--torrent", "-t", "for_torrents_only", is_flag=True, default=False, help=f"Only for Transmission torrents"
+    "--torrent", "-t", "for_torrents_only", is_flag=True, default=False, help="Only for Transmission torrents"
 )
-@click.option("--days", "-d", default=2, type=int, help=f"Days to consider recent files")
+@click.option("--days", "-d", default=2, type=int, help="Days to consider recent files")
 @click.argument("movie_name", nargs=-1, required=False)
 def subtitles(for_torrents_only: bool, days: int, movie_name: Tuple[str]):
     """Search subtitles for recent movies."""
