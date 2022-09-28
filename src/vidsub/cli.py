@@ -21,7 +21,7 @@ from typing import Optional, Tuple, Union
 
 import click
 from clib import verbose_option
-from clib.files import fzf, relative_to_home, shell
+from clib.files import fzf, shell
 from clib.ui import AliasedGroup, failure
 from slugify import slugify
 
@@ -77,7 +77,7 @@ def validate(force: bool, verbose: bool, movie_name: Tuple[str]):
         MovieManager.iter_movie_dirs(movie_name),
         length=MovieManager.count_movies(),
         label="Validating directories",
-        item_show_func=lambda path: str(relative_to_home(path)) if path else "",
+        item_show_func=lambda path: str(path) if path else "",
     ) as bar:
         for movie_dir in bar:
             if verbose:

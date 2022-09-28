@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# TODO: read from env var
 ROOT_DIR = Path("~/data").expanduser()
 MOVIES_DIR = ROOT_DIR / "movies"
 COMPLETED_DIR = ROOT_DIR / "completed"

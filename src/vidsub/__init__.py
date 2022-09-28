@@ -148,6 +148,7 @@ class MovieManager:
         iterables = [
             [
                 Path(dir_) / item
+                # TODO: ls -1 -t on Linux
                 for item in shell(f"exa -1s age {dir_}", quiet=True, return_lines=True)
             ]
             for dir_ in dirs
