@@ -3,7 +3,6 @@ __version__ = "0.0.0"
 
 import os
 import re
-from itertools import chain
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
@@ -22,7 +21,6 @@ from vidsub.constants import (
     IMDB_URL,
     MOVIE_EXTENSIONS,
     MOVIES_DIR,
-    ODD_MOVIES_DIR,
     UNIQUE_SEPARATOR,
     VIDEO_EXTENSIONS,
 )
@@ -79,16 +77,12 @@ class MovieManager:
     @staticmethod
     def validate_root() -> bool:
         """Validate if both root dirs doen't have single files."""
-        root_files = [
-            str(path)
-            for path in chain(MOVIES_DIR.iterdir(), ODD_MOVIES_DIR.iterdir())
-            if not path.is_dir()
-        ]
+        root_files = [str(path) for path in MOVIES_DIR.iterdir() if not path.is_dir()]
         if root_files:
             failure("There are files in the root dir! Move them to subdirectories.")
             failure("  " + "\n  ".join(root_files))
             return False
-        success(f"No single files under {MOVIES_DIR} and {ODD_MOVIES_DIR}")
+        success(f"No single files under {MOVIES_DIR}")
         return True
 
     @staticmethod
@@ -159,7 +153,7 @@ class MovieManager:
     def iter_movie_dirs(cls, patterns: Tuple[str] = None):
         """Iterate over movie directories."""
         regex = re.compile(".*".join(patterns), re.IGNORECASE) if patterns else None
-        for movie_path in cls.iterdir_newest_first(MOVIES_DIR, ODD_MOVIES_DIR):
+        for movie_path in cls.iterdir_newest_first(MOVIES_DIR):
             if not movie_path.is_dir():
                 continue
             if not regex or (regex and regex.findall(movie_path.name)):
@@ -170,7 +164,7 @@ class MovieManager:
         """Return the count of movies in both dirs."""
         return int(
             shell(
-                f"ls -1 {MOVIES_DIR} {ODD_MOVIES_DIR} | wc -l | xargs",
+                f"ls -1 {MOVIES_DIR} | wc -l | xargs",
                 quiet=True,
                 return_lines=True,
             )[0]

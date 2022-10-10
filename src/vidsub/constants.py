@@ -4,7 +4,6 @@ from pathlib import Path
 ROOT_DIR = Path("~/data").expanduser()
 MOVIES_DIR = ROOT_DIR / "movies"
 COMPLETED_DIR = ROOT_DIR / "completed"
-ODD_MOVIES_DIR = ROOT_DIR / "odd-movies"
 
 IMDB_URL = "https://www.imdb.com/title/tt"
 IMDB_SEARCH_URL = "https://www.imdb.com/find?q="

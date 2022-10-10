@@ -33,7 +33,7 @@ from vidsub.constants import IMDB_SEARCH_URL, MISSING_TXT, MOVIES_DIR, TORRENT_S
 def main():
     """Tools for movie files and directories on Kodi."""
     if not MOVIES_DIR.exists():
-        command = "sshfs osmc@styx:/mnt/red/ ~/data"
+        command = "sshfs osmc@styx:/mnt/wd/ ~/data"
         click.secho(
             f"SSH dir not mounted. Run this command:\n{command}", fg="bright_red"
         )
