@@ -11,7 +11,9 @@ TORRENT_SEARCH_COMMAND = "torrent-search -a -i on1337x "
 MISSING_TXT = "missing.txt"
 UNIQUE_SEPARATOR = "±"
 
-MOVIE_EXTENSIONS = {f".{item}" for item in {"avi", "mp4", "mpg", "mkv", "wmv", "mov"}}
+MOVIE_EXTENSIONS = {
+    f".{item}" for item in {"avi", "divx", "iso", "mp4", "mpg", "mkv", "wmv", "mov"}
+}
 VIDEO_EXTENSIONS = {
     f".{item}"
     for item in {
