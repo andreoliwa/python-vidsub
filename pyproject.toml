@@ -33,7 +33,7 @@ clib = { git = "https://github.com/andreoliwa/python-clib.git", branch = "develo
 python-magic = "*"
 identify = "*"
 python-slugify = "*"
-imdbpy = "*"
+cinemagoer = "*"
 transmissionrpc = "*"
 
 [tool.poetry.dev-dependencies]
