@@ -1,4 +1,4 @@
 virtualenv==20.16.5
 pip==23.2.1
-setuptools==68.1.0
+setuptools==68.1.2
 six==1.16.0
